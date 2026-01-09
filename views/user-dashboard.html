@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/user-dashboard">Dashboard</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/my-orders">My Orders</a></li>
+        <li><a href="/cart" id="cartLink">Cart (<span id="cartCount">0</span>)</a></li>
+        <li><a href="/user-settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap;">
+      <h1>My Dashboard</h1>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/shop" class="btn btn-primary">🛒 Continue Shopping</a>
+      </div>
+    </div>
+
+    <div id="alertContainer"></div>
+
+    <!-- User Stats -->
+    <div class="stats-grid" style="margin-bottom: 2rem;">
+      <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-content">
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-value" id="totalOrders">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-content">
+          <div class="stat-label">Pending Orders</div>
+          <div class="stat-value" id="pendingOrders">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-content">
+          <div class="stat-label">Completed Orders</div>
+          <div class="stat-value" id="completedOrders">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-content">
+          <div class="stat-label">Total Spent</div>
+          <div class="stat-value" id="totalSpent">Rs0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2>Recent Orders</h2>
+        <a href="/my-orders" class="btn btn-secondary">View All Orders</a>
+      </div>
+      <div id="recentOrders">
+        <p style="text-align: center; color: var(--text-light); padding: 2rem;">Loading orders...</p>
+      </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="card" style="margin-top: 2rem;">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Quick Actions</h2>
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+        <a href="/shop" class="quick-action-card" style="
+          text-decoration: none; 
+          display: block;
+          padding: 2rem;
+          background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+          border-radius: 1rem;
+          color: white;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          position: relative;
+          overflow: hidden;
+        ">
+          <div style="position: relative; z-index: 2;">
+            <div style="font-size: 3rem; margin-bottom: 1rem; display: inline-block; transform: scale(1); transition: transform 0.3s;">🛒</div>
+            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; font-weight: 600;">Browse Products</h3>
+            <p style="margin: 0; opacity: 0.9; font-size: 0.9rem;">Shop Now →</p>
+          </div>
+          <div style="
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: transform 0.5s;
+          "></div>
+        </a>
+        
+        <a href="/my-orders" class="quick-action-card" style="
+          text-decoration: none; 
+          display: block;
+          padding: 2rem;
+          background: linear-gradient(135deg, var(--success-color), #059669);
+          border-radius: 1rem;
+          color: white;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          position: relative;
+          overflow: hidden;
+        ">
+          <div style="position: relative; z-index: 2;">
+            <div style="font-size: 3rem; margin-bottom: 1rem; display: inline-block; transform: scale(1); transition: transform 0.3s;">📋</div>
+            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; font-weight: 600;">Order History</h3>
+            <p style="margin: 0; opacity: 0.9; font-size: 0.9rem;">View Orders →</p>
+          </div>
+          <div style="
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: transform 0.5s;
+          "></div>
+        </a>
+        
+        <a href="/cart" class="quick-action-card" style="
+          text-decoration: none; 
+          display: block;
+          padding: 2rem;
+          background: linear-gradient(135deg, var(--warning-color), #d97706);
+          border-radius: 1rem;
+          color: white;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          position: relative;
+          overflow: hidden;
+        ">
+          <div style="position: relative; z-index: 2;">
+            <div style="font-size: 3rem; margin-bottom: 1rem; display: inline-block; transform: scale(1); transition: transform 0.3s;">🛍️</div>
+            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; font-weight: 600;">Shopping Cart</h3>
+            <p style="margin: 0; opacity: 0.9; font-size: 0.9rem;">View Cart →</p>
+          </div>
+          <div style="
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: transform 0.5s;
+          "></div>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+
+    // Update cart count
+    function updateCartCount() {
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const cartCountElement = document.getElementById('cartCount');
+        if (cartCountElement) {
+          cartCountElement.textContent = count;
+        }
+      } catch (error) {
+        console.error('Error updating cart count:', error);
+      }
+    }
+
+    // Protect route - redirect to login if not authenticated
+    protectRoute().then(user => {
+      if (!user) {
+        // User not logged in, redirect to login
+        window.location.href = '/user-login';
+        return;
+      }
+      
+      // User is logged in, load dashboard data and cart count
+      updateCartCount();
+      loadUserDashboard();
+    });
+
+    async function loadUserDashboard() {
+      try {
+        // Fetch user's orders
+        const response = await fetch('/api/orders/my-orders');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+        
+        const orders = await response.json();
+        
+        // Ensure orders is an array
+        if (!Array.isArray(orders)) {
+          throw new Error('Invalid orders data');
+        }
+
+        // Calculate stats
+        const totalOrders = orders.length;
+        const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+        const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'delivered').length;
+        const totalSpent = orders
+          .filter(o => o.status === 'completed' || o.status === 'delivered')
+          .reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+
+        // Get currency symbol
+        let currency = 'Rs';
+        try {
+          const currencyResponse = await fetch('/api/settings/currency_symbol');
+          if (currencyResponse.ok) {
+            const currencyData = await currencyResponse.json();
+            currency = currencyData?.value || 'Rs';
+          }
+        } catch (err) {
+          console.warn('Could not fetch currency symbol:', err);
+        }
+
+        // Update stats
+        document.getElementById('totalOrders').textContent = totalOrders;
+        document.getElementById('pendingOrders').textContent = pendingOrders;
+        document.getElementById('completedOrders').textContent = completedOrders;
+        document.getElementById('totalSpent').textContent = currency + ' ' + parseFloat(totalSpent).toFixed(2);
+
+        // Display recent orders (last 5)
+        const recentOrders = orders.slice(0, 5);
+        const ordersHtml = recentOrders.length > 0 
+          ? recentOrders.map(order => `
+              <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; margin-bottom: 1rem; border-left: 4px solid var(--primary-color);">
+                <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 1rem;">
+                  <div>
+                    <strong>Order #${order.order_number || order.id}</strong>
+                    <p style="color: var(--text-light); margin-top: 0.25rem; font-size: 0.875rem;">
+                      ${order.created_at ? formatSriLankanDate(order.created_at) : 'N/A'}
+                    </p>
+                  </div>
+                  <div style="text-align: right;">
+                    <div style="font-size: 1.25rem; font-weight: bold; color: var(--primary-color);">
+                      ${currency}${parseFloat(order.total_amount || 0).toFixed(2)}
+                    </div>
+                    <span style="padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.875rem; background: var(--primary-color); color: white;">
+                      ${order.status || 'pending'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            `).join('')
+          : '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No orders yet. <a href="/shop">Start shopping!</a></p>';
+
+        document.getElementById('recentOrders').innerHTML = ordersHtml;
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+        document.getElementById('recentOrders').innerHTML = '<p style="text-align: center; color: var(--danger-color); padding: 2rem;">Failed to load orders. Please refresh the page or try again later.</p>';
+        // Reset stats to 0 on error
+        document.getElementById('totalOrders').textContent = '0';
+        document.getElementById('pendingOrders').textContent = '0';
+        document.getElementById('completedOrders').textContent = '0';
+        document.getElementById('totalSpent').textContent = 'Rs 0.00';
+      }
+    }
+  </script>
+  <script src="/js/dateUtils.js"></script>
+</body>
+</html>

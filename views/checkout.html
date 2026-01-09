@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Pharmacy Pro</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/user-dashboard">Dashboard</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/my-orders">My Orders</a></li>
+        <li><a href="/cart" id="cartLink">Cart (<span id="cartCount">0</span>)</a></li>
+        <li><a href="/user-settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1 style="margin-bottom: 2rem;">Checkout</h1>
+
+    <div id="alertContainer"></div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+      <!-- Order Summary -->
+      <section class="card">
+        <h2>Order Summary</h2>
+        <div id="orderSummary">
+          <p>Loading...</p>
+        </div>
+      </section>
+
+      <!-- Checkout Form -->
+      <section class="card">
+        <h2>Delivery Information</h2>
+        <form id="checkoutForm" onsubmit="event.preventDefault(); placeOrder();">
+          <div class="form-group">
+            <label for="customer_name">Full Name *</label>
+            <input type="text" id="customer_name" name="customer_name" required>
+          </div>
+          <div class="form-group">
+            <label for="customer_email">Email</label>
+            <input type="email" id="customer_email" name="customer_email">
+          </div>
+          <div class="form-group">
+            <label for="customer_phone">Phone Number</label>
+            <input type="tel" id="customer_phone" name="customer_phone">
+          </div>
+          <div class="form-group">
+            <label for="customer_address">Delivery Address *</label>
+            <textarea id="customer_address" name="customer_address" rows="3" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="payment_method">Payment Method *</label>
+            <select id="payment_method" name="payment_method" required>
+              <option value="cash">Cash on Delivery</option>
+              <option value="card">Credit/Debit Card</option>
+              <option value="online">Online Payment</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="notes">Order Notes (Optional)</label>
+            <textarea id="notes" name="notes" rows="2"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Place Order</button>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
+    <p>&copy; 2024 Pharmacy Pro. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+
+    // Update cart count
+    function updateCartCount() {
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const cartCountElement = document.getElementById('cartCount');
+        if (cartCountElement) {
+          cartCountElement.textContent = count;
+        }
+      } catch (error) {
+        console.error('Error updating cart count:', error);
+      }
+    }
+
+    // Protect route - redirect to login if not authenticated
+    protectRoute().then(user => {
+      if (!user) {
+        // User not logged in, redirect to login
+        window.location.href = '/user-login';
+        return;
+      }
+      
+      // User is logged in, load cart count and order summary
+      updateCartCount();
+      loadOrderSummary();
+    });
+
+    function loadOrderSummary() {
+      let total = 0;
+      const items = cart.map(item => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        return `
+          <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+            <div>
+              <strong>${item.product_name}</strong><br>
+              <small style="color: var(--text-light);">Qty: ${item.quantity} × Rs ${parseFloat(item.price).toFixed(2)}</small>
+            </div>
+            <strong>Rs ${parseFloat(subtotal).toFixed(2)}</strong>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('orderSummary').innerHTML = `
+        ${items}
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid var(--border-color);">
+          <div style="display: flex; justify-content: space-between; font-size: 1.25rem;">
+            <strong>Total:</strong>
+            <strong style="color: var(--primary-color);">Rs ${parseFloat(total).toFixed(2)}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    async function placeOrder() {
+      const form = document.getElementById('checkoutForm');
+      const formData = new FormData(form);
+
+      const orderData = {
+        items: cart.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity
+        })),
+        customer_name: formData.get('customer_name'),
+        customer_email: formData.get('customer_email'),
+        customer_phone: formData.get('customer_phone'),
+        customer_address: formData.get('customer_address'),
+        payment_method: formData.get('payment_method'),
+        notes: formData.get('notes')
+      };
+
+      try {
+        const response = await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(orderData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Clear cart
+          localStorage.removeItem('cart');
+          cart = [];
+          
+          showAlert('Order placed successfully!', 'success');
+          setTimeout(() => {
+            window.location.href = `/my-orders?order=${data.order.id}`;
+          }, 2000);
+        } else {
+          showAlert(data.error || 'Failed to place order', 'error');
+        }
+      } catch (error) {
+        console.error('Error placing order:', error);
+        showAlert('An error occurred while placing order', 'error');
+      }
+    }
+
+    function showAlert(message, type = 'info') {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type}`;
+      alertDiv.textContent = message;
+      
+      const container = document.getElementById('alertContainer');
+      if (container) {
+        container.innerHTML = '';
+        container.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 5000);
+      }
+    }
+  </script>
+</body>
+</html>
+
+

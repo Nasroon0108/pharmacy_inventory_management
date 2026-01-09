@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Management - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/inventory">Inventory</a></li>
+        <li><a href="/order-management">Orders</a></li>
+        <li><a href="/users">Users</a></li>
+        <li><a href="/settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1 style="margin-bottom: 2rem;">Order Management</h1>
+
+    <div id="alertContainer"></div>
+
+    <!-- Order Statistics -->
+    <div class="stats-grid" style="margin-bottom: 2rem;">
+      <div class="stat-card">
+        <h3>Total Orders</h3>
+        <div class="value" id="totalOrders">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pending Orders</h3>
+        <div class="value" style="color: var(--warning-color);" id="pendingOrders">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Revenue</h3>
+        <div class="value" id="totalRevenue">Rs 0.00</div>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <section class="card">
+      <div class="search-bar">
+        <select id="statusFilter" onchange="loadOrders()">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="processing">Processing</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Orders List -->
+    <div id="ordersContainer">
+      <p>Loading orders...</p>
+    </div>
+  </div>
+
+  <footer style="background: var(--bg-white); color: var(--text-dark); text-align: center; padding: 2rem; margin-top: 4rem; border-top: 1px solid var(--border-color);">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+
+    // Logout function - use the one from auth.js
+    // No need to redefine, auth.js provides it
+
+    // Protect admin route
+    protectAdminRoute().then(user => {
+      if (!user) {
+        console.log('User not authenticated or not admin');
+        return;
+      }
+      console.log('Loading orders for admin:', user);
+      loadStats();
+      loadOrders();
+    }).catch(error => {
+      console.error('Error in protectAdminRoute:', error);
+      document.getElementById('ordersContainer').innerHTML = `
+        <section class="card">
+          <p style="color: var(--danger-color); text-align: center; padding: 2rem;">
+            Authentication error. Please try logging in again.
+          </p>
+        </section>
+      `;
+    });
+
+    async function loadStats() {
+      try {
+        console.log('Loading stats...');
+        const response = await fetch('/api/orders/stats', {
+          credentials: 'include' // Include cookies for session
+        });
+        
+        console.log('Stats API response status:', response.status, response.ok);
+        
+        let stats;
+        try {
+          stats = await response.json();
+          console.log('Stats data received:', stats);
+        } catch (parseError) {
+          console.error('Failed to parse stats JSON:', parseError);
+          // Set default values if parsing fails
+          document.getElementById('totalOrders').textContent = '0';
+          document.getElementById('pendingOrders').textContent = '0';
+          document.getElementById('totalRevenue').textContent = 'Rs 0.00';
+          return;
+        }
+        
+        // Check if response has an error property
+        if (!response.ok) {
+          const errorMsg = stats?.error || `Server error (${response.status})`;
+          console.error('Stats API error:', errorMsg, 'Full response:', stats);
+          // Set default values instead of showing error
+          document.getElementById('totalOrders').textContent = '0';
+          document.getElementById('pendingOrders').textContent = '0';
+          document.getElementById('totalRevenue').textContent = 'Rs 0.00';
+          return;
+        }
+        
+        // Check if stats object has error property
+        if (stats && stats.error) {
+          console.error('Error in stats response:', stats.error);
+          document.getElementById('totalOrders').textContent = '0';
+          document.getElementById('pendingOrders').textContent = '0';
+          document.getElementById('totalRevenue').textContent = 'Rs 0.00';
+          return;
+        }
+
+        // Update stats cards with actual data
+        console.log('Updating stats cards with:', {
+          totalOrders: stats.totalOrders,
+          pendingOrders: stats.pendingOrders,
+          totalRevenue: stats.totalRevenue,
+          statsType: typeof stats.totalOrders
+        });
+        
+        // Ensure values are numbers and convert to string for display
+        const totalOrders = Number(stats.totalOrders) || 0;
+        const pendingOrders = Number(stats.pendingOrders) || 0;
+        
+        console.log('Setting values - Total:', totalOrders, 'Pending:', pendingOrders);
+        
+        const totalOrdersEl = document.getElementById('totalOrders');
+        const pendingOrdersEl = document.getElementById('pendingOrders');
+        
+        if (totalOrdersEl) {
+          totalOrdersEl.textContent = String(totalOrders);
+          console.log('Total orders element updated to:', totalOrdersEl.textContent);
+        } else {
+          console.error('totalOrders element not found!');
+        }
+        
+        if (pendingOrdersEl) {
+          pendingOrdersEl.textContent = String(pendingOrders);
+          console.log('Pending orders element updated to:', pendingOrdersEl.textContent);
+        } else {
+          console.error('pendingOrders element not found!');
+        }
+        
+        // Get currency symbol
+        let currency = 'Rs';
+        try {
+          const currencyResponse = await fetch('/api/settings/currency_symbol', {
+            credentials: 'include'
+          });
+          if (currencyResponse.ok) {
+            const currencyData = await currencyResponse.json();
+            currency = currencyData?.value || 'Rs';
+          }
+        } catch (currencyError) {
+          console.error('Error loading currency:', currencyError);
+          // Use default currency
+        }
+        
+        const revenue = parseFloat(stats.totalRevenue || 0).toFixed(2);
+        document.getElementById('totalRevenue').textContent = currency + ' ' + revenue;
+        
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        // Show 0 instead of "Error" - better UX
+        document.getElementById('totalOrders').textContent = '0';
+        document.getElementById('pendingOrders').textContent = '0';
+        document.getElementById('totalRevenue').textContent = 'Rs 0.00';
+      }
+    }
+
+    async function loadOrders() {
+      const container = document.getElementById('ordersContainer');
+      if (!container) {
+        console.error('Orders container not found');
+        return;
+      }
+      
+      try {
+        container.innerHTML = '<p>Loading orders...</p>';
+        
+        const status = document.getElementById('statusFilter')?.value || '';
+        const params = status ? `?status=${status}` : '';
+        
+        const response = await fetch(`/api/orders${params}`, {
+          credentials: 'include' // Include cookies for session
+        });
+        
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error('Failed to parse JSON:', parseError);
+          container.innerHTML = `
+            <section class="card">
+              <p style="color: var(--danger-color); text-align: center; padding: 2rem;">
+                Failed to parse server response. Please try again.
+              </p>
+              <div style="text-align: center; margin-top: 1rem;">
+                <button onclick="loadOrders()" class="btn btn-primary">Retry</button>
+              </div>
+            </section>
+          `;
+          return;
+        }
+        
+        // If response is not ok, show error but also log details
+        if (!response.ok) {
+          const errorMsg = data?.error || `Server error (${response.status})`;
+          console.error('API returned error:', response.status, data);
+          
+          // If it's a 403, it's likely an authentication issue
+          if (response.status === 403) {
+            container.innerHTML = `
+              <section class="card">
+                <p style="color: var(--danger-color); text-align: center; padding: 2rem;">
+                  Access denied. Please ensure you are logged in as admin.
+                </p>
+                <div style="text-align: center; margin-top: 1rem;">
+                  <a href="/admin-login" class="btn btn-primary">Go to Admin Login</a>
+                  <button onclick="loadOrders()" class="btn btn-secondary" style="margin-left: 0.5rem;">Retry</button>
+                </div>
+              </section>
+            `;
+          } else {
+            container.innerHTML = `
+              <section class="card">
+                <p style="color: var(--danger-color); text-align: center; padding: 2rem;">
+                  ${errorMsg}
+                </p>
+                <div style="text-align: center; margin-top: 1rem;">
+                  <button onclick="loadOrders()" class="btn btn-primary">Retry</button>
+                </div>
+              </section>
+            `;
+          }
+          return;
+        }
+        
+        // Handle error object in response (but only if it's not an array)
+        if (data && typeof data === 'object' && !Array.isArray(data) && data.error) {
+          console.error('Error in response data:', data.error);
+          container.innerHTML = `
+            <section class="card">
+              <p style="color: var(--danger-color); text-align: center; padding: 2rem;">
+                ${data.error}
+              </p>
+              <div style="text-align: center; margin-top: 1rem;">
+                <button onclick="loadOrders()" class="btn btn-primary">Retry</button>
+              </div>
+            </section>
+          `;
+          return;
+        }
+
+        // Ensure we have an array
+        const orders = Array.isArray(data) ? data : [];
+
+        if (orders.length === 0) {
+          container.innerHTML = `
+            <section class="card">
+              <p style="text-align: center; padding: 2rem;">No orders found</p>
+            </section>
+          `;
+          return;
+        }
+
+        container.innerHTML = orders.map(order => {
+          const statusColors = {
+            'pending': 'var(--warning-color)',
+            'processing': 'var(--primary-color)',
+            'shipped': 'var(--accent-color)',
+            'delivered': 'var(--success-color)',
+            'cancelled': 'var(--danger-color)'
+          };
+
+          // Ensure items is an array
+          const orderItems = Array.isArray(order.items) ? order.items : [];
+          
+          const items = orderItems.length > 0 ? orderItems.map(item => `
+            <tr>
+              <td>${item.product_name || 'N/A'}</td>
+              <td>${item.quantity || 0}</td>
+              <td>Rs ${parseFloat(item.price || 0).toFixed(2)}</td>
+              <td>Rs ${parseFloat(item.subtotal || 0).toFixed(2)}</td>
+            </tr>
+          `).join('') : '<tr><td colspan="4" style="text-align: center;">No items found</td></tr>';
+
+          return `
+            <section class="card" style="margin-bottom: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                  <h3>Order #${order.order_number || order.id || 'N/A'}</h3>
+                  <small style="color: var(--text-light);">${order.created_at ? formatSriLankanDateTime(order.created_at) : 'N/A'}</small>
+                  <div style="margin-top: 0.5rem;">
+                    <strong>Customer:</strong> ${order.customer_name || 'N/A'}<br>
+                    <small style="color: var(--text-light);">${order.customer_email || ''} ${order.customer_email && order.customer_phone ? '|' : ''} ${order.customer_phone || ''}</small>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <span style="padding: 0.5rem 1rem; border-radius: 0.5rem; background: ${statusColors[order.status] || 'var(--text-light)'}; color: white; text-transform: capitalize; display: inline-block; margin-bottom: 0.5rem;">
+                    ${order.status || 'pending'}
+                  </span>
+                  <div>
+                    <select id="statusSelect_${order.id}" onchange="updateOrderStatus(${order.id}, this.value)" style="padding: 0.5rem;">
+                      <option value="pending" ${(order.status || 'pending') === 'pending' ? 'selected' : ''}>Pending</option>
+                      <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
+                      <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                      <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                      <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Quantity</th>
+                      <th>Price</th>
+                      <th>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${items}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong>Total Amount:</strong> <span style="color: var(--primary-color); font-size: 1.25rem;">Rs ${parseFloat(order.total_amount || 0).toFixed(2)}</span><br>
+                    <small style="color: var(--text-light);">Payment: ${order.payment_method || 'N/A'} | ${order.payment_status || 'N/A'}</small>
+                  </div>
+                </div>
+                ${order.customer_address ? `<div style="margin-top: 0.5rem; color: var(--text-light);"><strong>Address:</strong> ${order.customer_address}</div>` : ''}
+                ${order.notes ? `<div style="margin-top: 0.5rem; color: var(--text-light);"><strong>Notes:</strong> ${order.notes}</div>` : ''}
+              </div>
+            </section>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        if (container) {
+          container.innerHTML = `
+            <section class="card">
+              <p style="color: var(--danger-color); text-align: center; padding: 2rem;">
+                Error: ${error.message || 'Failed to load orders. Please check your connection and try again.'}
+              </p>
+              <div style="text-align: center; margin-top: 1rem;">
+                <button onclick="loadOrders()" class="btn btn-primary">Retry</button>
+              </div>
+            </section>
+          `;
+        }
+      }
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      try {
+        const response = await fetch(`/api/orders/${orderId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showAlert('Order status updated successfully', 'success');
+          loadStats();
+          loadOrders();
+        } else {
+          showAlert(data.error || 'Failed to update order status', 'error');
+          loadOrders(); // Reload to reset select
+        }
+      } catch (error) {
+        console.error('Error updating order status:', error);
+        showAlert('An error occurred', 'error');
+        loadOrders(); // Reload to reset select
+      }
+    }
+
+    function showAlert(message, type = 'info') {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type}`;
+      alertDiv.textContent = message;
+      
+      const container = document.getElementById('alertContainer');
+      if (container) {
+        container.innerHTML = '';
+        container.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+      }
+    }
+  </script>
+  <script src="/js/dateUtils.js"></script>
+</body>
+</html>

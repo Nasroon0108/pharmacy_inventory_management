@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Pharmacy Inventory Management</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .form-toggle {
+      text-align: center;
+      margin-top: 1rem;
+      color: var(--text-light);
+    }
+    .form-toggle a {
+      color: var(--primary-color);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .form-toggle a:hover {
+      color: var(--primary-dark);
+    }
+    .hidden {
+      display: none;
+    }
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 Pharmacy Pro</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/">Home</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/login">Login</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container" style="max-width: 500px; margin-top: 4rem;">
+    <section class="card">
+      <!-- Login Form -->
+      <div id="loginSection">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Login</h1>
+        <div id="alertContainer"></div>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required autofocus>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+        </form>
+        <div class="form-toggle">
+          Don't have an account? <a id="showRegister">Register here</a>
+        </div>
+      </div>
+
+      <!-- Registration Form -->
+      <div id="registerSection" class="hidden">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Register</h1>
+        <div id="registerAlertContainer"></div>
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="regUsername">Username</label>
+            <input type="text" id="regUsername" name="regUsername" required>
+          </div>
+          <div class="form-group">
+            <label for="regEmail">Email (Optional)</label>
+            <input type="email" id="regEmail" name="regEmail">
+          </div>
+          <div class="form-group">
+            <label for="regPassword">Password</label>
+            <input type="password" id="regPassword" name="regPassword" required minlength="6">
+            <small style="color: var(--text-light);">Must be at least 6 characters</small>
+          </div>
+          <div class="form-group">
+            <label for="regPasswordConfirm">Confirm Password</label>
+            <input type="password" id="regPasswordConfirm" name="regPasswordConfirm" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+        </form>
+        <div class="form-toggle">
+          Already have an account? <a id="showLogin">Login here</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
+    <p>&copy; 2024 Pharmacy Pro. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    // Toggle between login and register forms
+    document.getElementById('showRegister').addEventListener('click', function() {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('registerSection').classList.remove('hidden');
+    });
+
+    document.getElementById('showLogin').addEventListener('click', function() {
+      document.getElementById('registerSection').classList.add('hidden');
+      document.getElementById('loginSection').classList.remove('hidden');
+    });
+
+    // Login form handler
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      await login(username, password);
+    });
+
+    // Register form handler
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('regUsername').value;
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+
+      if (password !== passwordConfirm) {
+        showAlert('Passwords do not match', 'error');
+        return;
+      }
+
+      await register(username, password, email);
+    });
+
+    // Check if already logged in
+    checkAuth().then(user => {
+      if (user) {
+        window.location.href = '/dashboard';
+      }
+    });
+  </script>
+</body>
+</html>
+

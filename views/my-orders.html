@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/user-dashboard">Dashboard</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/my-orders">My Orders</a></li>
+        <li><a href="/cart" id="cartLink">Cart (<span id="cartCount">0</span>)</a></li>
+        <li><a href="/user-settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container" style="flex: 1;">
+    <h1 style="margin-bottom: 2rem;">My Orders</h1>
+
+    <div id="ordersContainer">
+      <p>Loading orders...</p>
+    </div>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: auto;">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+
+    // Protect route - redirect to login if not authenticated
+    // Update cart count
+    function updateCartCount() {
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const cartCountElement = document.getElementById('cartCount');
+        if (cartCountElement) {
+          cartCountElement.textContent = count;
+        }
+      } catch (error) {
+        console.error('Error updating cart count:', error);
+      }
+    }
+
+    protectRoute().then(user => {
+      if (!user) {
+        window.location.href = '/user-login';
+        return;
+      }
+      
+      // Load cart count and orders
+      updateCartCount();
+      loadOrders();
+    });
+
+    async function loadOrders() {
+      try {
+        const response = await fetch('/api/orders/my-orders');
+        const orders = await response.json();
+
+        // Get currency symbol
+        const currencyResponse = await fetch('/api/settings/currency_symbol');
+        const currencyData = await currencyResponse.json();
+        const currency = currencyData?.value || 'Rs';
+
+        const container = document.getElementById('ordersContainer');
+
+        if (orders.length === 0) {
+          container.innerHTML = `
+            <section class="card">
+              <p style="text-align: center; padding: 2rem;">You have no orders yet</p>
+              <div style="text-align: center;">
+                <a href="/shop" class="btn btn-primary">Start Shopping</a>
+              </div>
+            </section>
+          `;
+          return;
+        }
+
+        container.innerHTML = orders.map(order => {
+          const statusColors = {
+            'pending': 'var(--warning-color)',
+            'processing': 'var(--primary-color)',
+            'shipped': 'var(--accent-color)',
+            'delivered': 'var(--success-color)',
+            'completed': 'var(--success-color)',
+            'cancelled': 'var(--danger-color)'
+          };
+
+          const items = order.items.map(item => `
+            <tr>
+              <td>${item.product_name}</td>
+              <td>${item.quantity}</td>
+              <td>Rs ${parseFloat(item.price).toFixed(2)}</td>
+              <td>Rs ${parseFloat(item.subtotal).toFixed(2)}</td>
+            </tr>
+          `).join('');
+
+          return `
+            <section class="card" style="margin-bottom: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                  <h3>Order #${order.order_number}</h3>
+                  <small style="color: var(--text-light);">${formatSriLankanDateTime(order.created_at)}</small>
+                </div>
+                <span style="padding: 0.5rem 1rem; border-radius: 0.5rem; background: ${statusColors[order.status] || 'var(--text-light)'}; color: white; text-transform: capitalize;">
+                  ${order.status}
+                </span>
+              </div>
+              
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Quantity</th>
+                      <th>Price</th>
+                      <th>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${items}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                  <div>
+                    <strong>Total Amount:</strong> <span style="color: var(--primary-color); font-size: 1.25rem;">Rs ${parseFloat(order.total_amount).toFixed(2)}</span>
+                  </div>
+                </div>
+                <div style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.875rem;">
+                  Payment: ${order.payment_method} | Status: ${order.payment_status}
+                </div>
+              </div>
+            </section>
+          `;
+        }).join('');
+
+        // Check for order ID in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order');
+        if (orderId) {
+          const orderElement = document.querySelector(`[data-order-id="${orderId}"]`);
+          if (orderElement) {
+            orderElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        document.getElementById('ordersContainer').innerHTML = `
+          <section class="card">
+            <p style="color: var(--danger-color);">Error loading orders. Please try again.</p>
+          </section>
+        `;
+      }
+    }
+  </script>
+  <script src="/js/dateUtils.js"></script>
+</body>
+</html>

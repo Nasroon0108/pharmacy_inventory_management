@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/">Home</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/user-login">Login</a></li>
+        <li><a href="/admin-login">Admin</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div style="position: relative; z-index: 10;">
+      <h1>Welcome to MediFlow</h1>
+      <p>Your trusted pharmacy for quality healthcare products</p>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+        <a href="/shop" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem; text-decoration: none; display: inline-block;">🛒 Shop Now</a>
+        <a href="/user-login" class="btn" style="background: white; color: var(--primary-color); padding: 1rem 2rem; font-size: 1.1rem; text-decoration: none; display: inline-block; border: 2px solid white;">Sign In</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="container">
+    <section class="card">
+      <h2 style="text-align: center; margin-bottom: 2rem; color: var(--primary-color);">Why Choose MediFlow?</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>🛒 Online Shopping</h3>
+          <p>Browse and order pharmacy products online with ease. Fast delivery and secure checkout.</p>
+        </div>
+        <div class="stat-card">
+          <h3>⚡ Fast Delivery</h3>
+          <p>Quick and reliable delivery service to get your medications when you need them.</p>
+        </div>
+        <div class="stat-card">
+          <h3>🔒 Secure & Safe</h3>
+          <p>Your health data and orders are protected with our secure systems.</p>
+        </div>
+        <div class="stat-card">
+          <h3>💊 Quality Products</h3>
+          <p>We only stock genuine, quality pharmaceutical products from trusted suppliers.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+  <script src="/js/nav.js"></script>
+  <script>
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/user-dashboard">Dashboard</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/my-orders">My Orders</a></li>
+        <li><a href="/cart" id="cartLink">Cart (<span id="cartCount">0</span>)</a></li>
+        <li><a href="/user-settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container" style="flex: 1;">
+    <h1 style="margin-bottom: 2rem;">Shopping Cart</h1>
+
+    <div id="alertContainer"></div>
+
+    <div id="cartContent">
+      <p>Loading cart...</p>
+    </div>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: auto;">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+
+    // Protect route - redirect to login if not authenticated
+    protectRoute().then(user => {
+      if (!user) {
+        window.location.href = '/user-login';
+        return;
+      }
+      
+      loadCart();
+    });
+
+    function loadCart() {
+      updateCartCount();
+      displayCart();
+    }
+
+    async function displayCart() {
+      const container = document.getElementById('cartContent');
+      
+      // Get currency symbol
+      let currency = 'Rs';
+      try {
+        const currencyResponse = await fetch('/api/settings/currency_symbol');
+        const currencyData = await currencyResponse.json();
+        currency = currencyData?.value || 'Rs';
+      } catch (error) {
+        console.error('Error fetching currency:', error);
+      }
+      
+      if (cart.length === 0) {
+        container.innerHTML = `
+          <section class="card">
+            <p style="text-align: center; padding: 2rem;">Your cart is empty</p>
+            <div style="text-align: center;">
+              <a href="/shop" class="btn btn-primary">Continue Shopping</a>
+            </div>
+          </section>
+        `;
+        return;
+      }
+
+      let total = 0;
+      const cartItems = cart.map(item => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        return `
+          <tr>
+            <td>${item.product_name}</td>
+            <td>${currency}${parseFloat(item.price).toFixed(2)}</td>
+            <td>
+              <input 
+                type="number" 
+                value="${item.quantity}" 
+                min="1" 
+                onchange="updateQuantity(${item.product_id}, this.value)"
+                style="width: 60px; padding: 0.5rem;"
+              >
+            </td>
+            <td>${currency}${parseFloat(subtotal).toFixed(2)}</td>
+            <td>
+              <button onclick="removeFromCart(${item.product_id})" class="btn btn-danger" style="padding: 0.5rem 1rem;">Remove</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <section class="card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Subtotal</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${cartItems}
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+              <h2>Total: <span style="color: var(--primary-color);">${currency}${parseFloat(total).toFixed(2)}</span></h2>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; flex-wrap: wrap;">
+              <a href="/shop" class="btn btn-secondary">Continue Shopping</a>
+              <a href="/checkout" class="btn btn-primary">Proceed to Checkout</a>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function updateQuantity(productId, newQuantity) {
+      const item = cart.find(i => i.product_id === productId);
+      if (item) {
+        const qty = parseInt(newQuantity);
+        if (qty < 1) {
+          removeFromCart(productId);
+          return;
+        }
+        item.quantity = qty;
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart();
+      }
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(item => item.product_id !== productId);
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartCount();
+      displayCart();
+      showAlert('Item removed from cart', 'info');
+    }
+
+    function updateCartCount() {
+      const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+      const cartCountElement = document.getElementById('cartCount');
+      if (cartCountElement) {
+        cartCountElement.textContent = count;
+      }
+    }
+
+    function showAlert(message, type = 'info') {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type}`;
+      alertDiv.textContent = message;
+      
+      const container = document.getElementById('alertContainer');
+      if (container) {
+        container.innerHTML = '';
+        container.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+      }
+    }
+  </script>
+</body>
+</html>

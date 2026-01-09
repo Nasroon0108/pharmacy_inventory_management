@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/inventory">Inventory</a></li>
+        <li><a href="/order-management">Orders</a></li>
+        <li><a href="/users">Users</a></li>
+        <li><a href="/settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap;">
+      <h1 style="margin: 0;">Dashboard</h1>
+      <div style="color: var(--text-light);">
+        Welcome, <strong id="userName">Admin</strong>
+      </div>
+    </div>
+
+    <div id="alertContainer"></div>
+    
+    <div id="statsContainer" class="stats-grid">
+      <!-- Stats will be loaded here -->
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 2rem;">
+      <!-- Quick Actions -->
+      <section class="card">
+        <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Quick Actions</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <a href="/inventory" class="btn btn-primary" style="text-align: center; padding: 1.5rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📦</div>
+            <div>Manage Inventory</div>
+          </a>
+          <a href="/inventory?action=add" class="btn btn-success" style="text-align: center; padding: 1.5rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">➕</div>
+            <div>Add Product</div>
+          </a>
+          <a href="/order-management" class="btn" style="background: var(--warning-color); color: white; text-align: center; padding: 1.5rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+            <div>View Orders</div>
+          </a>
+          <a href="/users" class="btn btn-secondary" style="text-align: center; padding: 1.5rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">👥</div>
+            <div>Manage Users</div>
+          </a>
+          <a href="/settings" class="btn" style="background: var(--accent-color); color: white; text-align: center; padding: 1.5rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚙️</div>
+            <div>Settings</div>
+          </a>
+          <a href="/inventory" class="btn" style="background: var(--danger-color); color: white; text-align: center; padding: 1.5rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚠️</div>
+            <div>Low Stock Alert</div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Recent Activity -->
+      <section class="card">
+        <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Recent Activity</h2>
+        <div id="recentActivity">
+          <p style="color: var(--text-light); text-align: center; padding: 2rem;">Loading...</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- Low Stock Items -->
+    <section class="card" style="margin-top: 1.5rem; padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: var(--primary-color);">Low Stock Items</h2>
+        <a href="/inventory" class="btn btn-primary" style="padding: 0.5rem 1rem;">View All</a>
+      </div>
+      <div id="lowStockContainer">
+        <p style="text-align: center; padding: 2rem; color: var(--text-light);">Loading...</p>
+      </div>
+    </section>
+
+    <!-- Expiring Soon Items -->
+    <section class="card" style="margin-top: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: var(--primary-color);">Expiring Soon Items</h2>
+        <a href="/inventory" class="btn btn-primary" style="padding: 0.5rem 1rem;">View All</a>
+      </div>
+      <div id="expiringSoonContainer">
+        <p style="text-align: center; padding: 2rem; color: var(--text-light);">Loading...</p>
+      </div>
+    </section>
+  </div>
+
+  <footer style="background: var(--bg-white); color: var(--text-dark); text-align: center; padding: 2rem; margin-top: 4rem; border-top: 1px solid var(--border-color);">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+
+    // Protect admin route
+    protectAdminRoute().then(user => {
+      if (!user) return;
+      
+      // Set username
+      document.getElementById('userName').textContent = user.username;
+      
+      loadDashboard();
+    });
+
+    async function loadDashboard() {
+      try {
+        // Load settings first to get threshold
+        let lowStockThreshold = 10;
+        let expiryAlertDays = 30;
+        try {
+          const settingsResponse = await fetch('/api/settings/low_stock_threshold');
+          if (settingsResponse.ok) {
+            const setting = await settingsResponse.json();
+            lowStockThreshold = parseInt(setting.value) || 10;
+          }
+          const expirySettingResponse = await fetch('/api/settings/expiry_alert_days');
+          if (expirySettingResponse.ok) {
+            const setting = await expirySettingResponse.json();
+            expiryAlertDays = parseInt(setting.value) || 30;
+          }
+        } catch (error) {
+          console.error('Error loading settings:', error);
+        }
+
+        const response = await fetch('/api/dashboard/stats');
+        if (!response.ok) {
+          throw new Error('Failed to load dashboard stats');
+        }
+        const stats = await response.json();
+
+        // Display stats
+        const statsContainer = document.getElementById('statsContainer');
+        statsContainer.innerHTML = `
+          <div class="stat-card" style="cursor: pointer; transition: all 0.3s ease; position: relative; overflow: visible;" onclick="window.location.href='/inventory'" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'; this.style.borderColor='var(--primary-color)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'; this.style.borderColor='var(--border-color)'">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+              <h3>Total Products</h3>
+              <span style="font-size: 2rem;">📦</span>
+            </div>
+            <div class="value">${stats.totalProducts || 0}</div>
+            <small style="color: var(--text-light); display: block; margin-top: 0.5rem;">Click to view all products</small>
+          </div>
+          <div class="stat-card" style="cursor: pointer; transition: all 0.3s ease; position: relative; overflow: visible;" onclick="window.location.href='/inventory?filter=lowstock'" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'; this.style.borderColor='var(--danger-color)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'; this.style.borderColor='var(--border-color)'">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+              <h3>Low Stock Items</h3>
+              <span style="font-size: 2rem;">⚠️</span>
+            </div>
+            <div class="value" style="color: ${stats.lowStock > 0 ? 'var(--danger-color)' : 'var(--success-color)'}">
+              ${stats.lowStock || 0}
+            </div>
+            <small style="color: var(--text-light); display: block; margin-top: 0.5rem;">Threshold: < ${stats.lowStockThreshold || lowStockThreshold}</small>
+          </div>
+          <div class="stat-card" style="cursor: pointer; transition: all 0.3s ease; position: relative; overflow: visible;" onclick="window.location.href='/inventory?filter=expiring'" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'; this.style.borderColor='var(--warning-color)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'; this.style.borderColor='var(--border-color)'">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+              <h3>Expiring Soon</h3>
+              <span style="font-size: 2rem;">📅</span>
+            </div>
+            <div class="value" style="color: ${stats.expiringSoon > 0 ? 'var(--warning-color)' : 'var(--success-color)'}">
+              ${stats.expiringSoon || 0}
+            </div>
+            <small style="color: var(--text-light); display: block; margin-top: 0.5rem;">Within ${stats.expiryAlertDays || 30} days</small>
+          </div>
+          <div class="stat-card" style="cursor: pointer; transition: all 0.3s ease; position: relative; overflow: visible;" onclick="window.location.href='/inventory'" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'; this.style.borderColor='var(--primary-color)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'; this.style.borderColor='var(--border-color)'">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+              <h3>Total Inventory Value</h3>
+              <span style="font-size: 2rem;">💰</span>
+            </div>
+            <div class="value" id="totalValue">Rs${parseFloat(stats.totalValue || 0).toFixed(2)}</div>
+            <small style="color: var(--text-light); display: block; margin-top: 0.5rem;">Click to view inventory</small>
+          </div>
+          <div class="stat-card" style="cursor: pointer; transition: all 0.3s ease; position: relative; overflow: visible;" onclick="window.location.href='/inventory'" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'; this.style.borderColor='var(--primary-color)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'; this.style.borderColor='var(--border-color)'">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+              <h3>Categories</h3>
+              <span style="font-size: 2rem;">🏷️</span>
+            </div>
+            <div class="value">${stats.byCategory?.length || 0}</div>
+            <small style="color: var(--text-light); display: block; margin-top: 0.5rem;">Click to view categories</small>
+          </div>
+        `;
+
+        // Load low stock items
+        const productsResponse = await fetch('/api/products');
+        if (!productsResponse.ok) {
+          throw new Error('Failed to load products');
+        }
+        const products = await productsResponse.json();
+        const lowStock = products.filter(p => p.quantity < lowStockThreshold);
+
+        // Calculate expiring products
+        const expiryAlertDaysFromStats = stats.expiryAlertDays || expiryAlertDays || 30;
+        const expiryDate = getSriLankanDate();
+        expiryDate.setDate(expiryDate.getDate() + expiryAlertDaysFromStats);
+        
+        const expiringProducts = products.filter(p => {
+          if (!p.expiry_date) return false;
+          const productExpiry = toSriLankanDate(p.expiry_date);
+          const today = getSriLankanToday();
+          return productExpiry <= expiryDate && productExpiry >= today;
+        });
+
+        // Load recent orders
+        try {
+          // Get all orders for better activity display
+          const allOrdersResponse = await fetch('/api/orders');
+          const pendingOrdersResponse = await fetch('/api/orders?status=pending');
+          
+          if (allOrdersResponse.ok && pendingOrdersResponse.ok) {
+            const allOrders = await allOrdersResponse.json();
+            const pendingOrders = await pendingOrdersResponse.json();
+            const recentActivity = document.getElementById('recentActivity');
+            
+            // Calculate statistics
+            const todayOrders = allOrders.filter(o => {
+              const orderDate = toSriLankanDate(o.created_at);
+              const today = getSriLankanToday();
+              return orderDate && orderDate.toDateString() === today.toDateString();
+            });
+            
+            const totalRevenue = allOrders
+              .filter(o => o.status === 'delivered')
+              .reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+            
+            if (pendingOrders.length > 0 || allOrders.length > 0) {
+              recentActivity.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                  <!-- Statistics Summary -->
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <div style="padding: 0.75rem; background: var(--bg-light); border-radius: 0.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease;" onclick="window.location.href='/order-management?status=pending'" onmouseover="this.style.background='var(--primary-color)'; this.style.color='white'; this.style.transform='scale(1.05)'" onmouseout="this.style.background='var(--bg-light)'; this.style.color=''; this.style.transform='scale(1)'">
+                      <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${pendingOrders.length}</div>
+                      <div style="font-size: 0.75rem; color: var(--text-light);">Pending Orders</div>
+                    </div>
+                    <div style="padding: 0.75rem; background: var(--bg-light); border-radius: 0.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease;" onclick="window.location.href='/order-management'" onmouseover="this.style.background='var(--success-color)'; this.style.color='white'; this.style.transform='scale(1.05)'" onmouseout="this.style.background='var(--bg-light)'; this.style.color=''; this.style.transform='scale(1)'">
+                      <div style="font-size: 1.5rem; font-weight: bold; color: var(--success-color);">${todayOrders.length}</div>
+                      <div style="font-size: 0.75rem; color: var(--text-light);">Today's Orders</div>
+                    </div>
+                  </div>
+                  
+                  ${totalRevenue > 0 ? `
+                    <div style="padding: 0.75rem; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border-radius: 0.5rem; color: white; text-align: center; cursor: pointer; transition: all 0.3s ease;" onclick="window.location.href='/order-management?status=delivered'" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                      <div style="font-size: 1.25rem; font-weight: bold;">Total Revenue</div>
+                      <div style="font-size: 1.75rem; font-weight: bold; margin-top: 0.25rem;">Rs ${parseFloat(totalRevenue).toFixed(2)}</div>
+                      <small style="opacity: 0.9; font-size: 0.7rem; display: block; margin-top: 0.25rem;">Click to view all orders</small>
+                    </div>
+                  ` : ''}
+                  
+                  <!-- Recent Orders List -->
+                  <div style="margin-top: 0.5rem;">
+                    <h4 style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Recent Pending Orders</h4>
+                    ${pendingOrders.slice(0, 5).map(order => `
+                      <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 3px solid var(--primary-color); margin-bottom: 0.75rem; cursor: pointer; transition: all 0.3s ease;" onclick="window.location.href='/order-management'" onmouseover="this.style.background='var(--primary-color)'; this.style.color='white'; this.style.transform='translateX(5px)'" onmouseout="this.style.background='var(--bg-light)'; this.style.color=''; this.style.transform='translateX(0)'">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                          <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                              <span style="font-size: 1.25rem;">📦</span>
+                              <strong style="font-size: 0.9rem;">${order.order_number}</strong>
+                            </div>
+                            <small style="color: var(--text-light); display: block; margin-bottom: 0.25rem;">👤 ${order.customer_name}</small>
+                            <small style="color: var(--text-light); display: block;">🕒 ${formatSriLankanDateTime(order.created_at)}</small>
+                          </div>
+                          <div style="text-align: right;">
+                            <span style="padding: 0.25rem 0.75rem; background: var(--warning-color); color: white; border-radius: 0.25rem; font-size: 0.75rem; text-transform: uppercase; display: inline-block; margin-bottom: 0.25rem;">
+                              ${order.status}
+                            </span>
+                            <div style="color: var(--primary-color); font-weight: 600; font-size: 0.9rem;">
+                              Rs ${parseFloat(order.total_amount).toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    `).join('')}
+                    ${pendingOrders.length === 0 ? `
+                      <div style="text-align: center; padding: 1.5rem; background: var(--bg-light); border-radius: 0.5rem;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+                        <p style="color: var(--success-color); font-weight: 600;">No pending orders</p>
+                        <small style="color: var(--text-light);">All orders are processed!</small>
+                      </div>
+                    ` : ''}
+                    ${pendingOrders.length > 5 ? `<a href="/order-management" class="btn btn-secondary" style="text-align: center; margin-top: 0.5rem; width: 100%;">View All Orders (${allOrders.length})</a>` : ''}
+                  </div>
+                </div>
+              `;
+            } else {
+              recentActivity.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                  <div style="font-size: 4rem; margin-bottom: 1rem;">📋</div>
+                  <p style="color: var(--text-light); margin-bottom: 0.5rem;">No orders yet</p>
+                  <small style="color: var(--text-light);">Orders will appear here when customers place them</small>
+                </div>
+              `;
+            }
+          }
+        } catch (error) {
+          console.error('Error loading recent orders:', error);
+        }
+
+        // Enhanced Low Stock Items display
+        const lowStockContainer = document.getElementById('lowStockContainer');
+        if (lowStock.length > 0) {
+          const totalLowStockValue = lowStock.reduce((sum, p) => sum + (parseFloat(p.price) * p.quantity), 0);
+          const urgentLowStock = lowStock.filter(p => p.quantity === 0);
+          
+          lowStockContainer.innerHTML = `
+            <!-- Summary Stats -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+              <div style="padding: 1rem; background: linear-gradient(135deg, var(--danger-color), #dc2626); border-radius: 0.5rem; color: white; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold;">${lowStock.length}</div>
+                <div style="font-size: 0.75rem; opacity: 0.9;">Low Stock Items</div>
+              </div>
+              <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; text-align: center; border: 2px solid var(--danger-color);">
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--danger-color);">${urgentLowStock.length}</div>
+                <div style="font-size: 0.75rem; color: var(--text-light);">Out of Stock</div>
+              </div>
+              <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; text-align: center;">
+                <div style="font-size: 1.25rem; font-weight: bold; color: var(--primary-color);">Rs ${parseFloat(totalLowStockValue).toFixed(2)}</div>
+                <div style="font-size: 0.75rem; color: var(--text-light);">Total Value</div>
+              </div>
+            </div>
+            
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${lowStock.map(p => {
+                    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+                    const bgColor = isDarkMode ? '#7f1d1d' : '#fee2e2';
+                    const isOutOfStock = p.quantity === 0;
+                    
+                    return `
+                      <tr style="${isOutOfStock ? 'background-color: rgba(239, 68, 68, 0.1);' : ''}">
+                        <td>
+                          <strong>${p.name}</strong>
+                          ${isOutOfStock ? ' <span style="color: var(--danger-color);">🚫</span>' : ''}
+                        </td>
+                        <td>${p.category}</td>
+                        <td>
+                          <span style="color: var(--danger-color); font-weight: bold; padding: 0.25rem 0.75rem; background: ${bgColor}; border-radius: 0.5rem;">
+                            ${p.quantity}
+                          </span>
+                        </td>
+                        <td>Rs ${parseFloat(p.price).toFixed(2)}</td>
+                        <td>
+                          <a href="/inventory?action=edit&id=${p.id}" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                            ${isOutOfStock ? 'Restock' : 'View'}
+                          </a>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        } else {
+          lowStockContainer.innerHTML = `
+            <div style="text-align: center; padding: 3rem; background: linear-gradient(135deg, var(--success-color), #059669); border-radius: 0.5rem; color: white;">
+              <div style="font-size: 5rem; margin-bottom: 1rem;">✅</div>
+              <p style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">All products are well stocked!</p>
+              <small style="opacity: 0.9;">Current threshold: < ${lowStockThreshold} items</small>
+              <div style="margin-top: 1.5rem;">
+                <a href="/inventory" class="btn" style="background: white; color: var(--success-color); padding: 0.75rem 1.5rem;">
+                  View Inventory
+                </a>
+              </div>
+            </div>
+          `;
+        }
+
+        // Enhanced Expiring Soon Items display
+        const expiringSoonContainer = document.getElementById('expiringSoonContainer');
+        if (expiringProducts.length > 0) {
+          const urgentExpiring = expiringProducts.filter(p => {
+            const expiryDate = toSriLankanDate(p.expiry_date);
+            const today = getSriLankanToday();
+            const daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+            return daysRemaining <= 7;
+          });
+          
+          const totalExpiringValue = expiringProducts.reduce((sum, p) => sum + (parseFloat(p.price) * p.quantity), 0);
+          
+          expiringSoonContainer.innerHTML = `
+            <!-- Summary Stats -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+              <div style="padding: 1rem; background: linear-gradient(135deg, var(--warning-color), #d97706); border-radius: 0.5rem; color: white; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold;">${expiringProducts.length}</div>
+                <div style="font-size: 0.75rem; opacity: 0.9;">Expiring Soon</div>
+              </div>
+              <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; text-align: center; border: 2px solid var(--danger-color);">
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--danger-color);">${urgentExpiring.length}</div>
+                <div style="font-size: 0.75rem; color: var(--text-light);">Urgent (≤7 days)</div>
+              </div>
+              <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; text-align: center;">
+                <div style="font-size: 1.25rem; font-weight: bold; color: var(--primary-color);">Rs ${parseFloat(totalExpiringValue).toFixed(2)}</div>
+                <div style="font-size: 0.75rem; color: var(--text-light);">Total Value</div>
+              </div>
+            </div>
+            
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Expiry Date</th>
+                    <th>Days Remaining</th>
+                    <th>Quantity</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${expiringProducts.map(p => {
+                    const expiryDate = toSriLankanDate(p.expiry_date);
+                    const today = getSriLankanToday();
+                    const daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+                    const isUrgent = daysRemaining <= 7;
+                    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+                    const urgentBg = isDarkMode ? '#7f1d1d' : '#fee2e2';
+                    const warningBg = isDarkMode ? '#78350f' : '#fef3c7';
+                    
+                    return `
+                      <tr style="${isUrgent ? 'background-color: rgba(239, 68, 68, 0.1);' : ''}">
+                        <td>
+                          <strong>${p.name}</strong>
+                          ${isUrgent ? ' <span style="color: var(--danger-color);">🚨</span>' : ''}
+                        </td>
+                        <td>${p.category}</td>
+                        <td>${formatSriLankanDate(p.expiry_date)}</td>
+                        <td>
+                          <span style="color: ${isUrgent ? 'var(--danger-color)' : 'var(--warning-color)'}; font-weight: bold; padding: 0.25rem 0.75rem; background: ${isUrgent ? urgentBg : warningBg}; border-radius: 0.5rem;">
+                            ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}
+                          </span>
+                        </td>
+                        <td>${p.quantity}</td>
+                        <td><a href="/inventory?action=edit&id=${p.id}" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">View</a></td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        } else {
+          expiringSoonContainer.innerHTML = `
+            <div style="text-align: center; padding: 3rem; background: linear-gradient(135deg, var(--success-color), #059669); border-radius: 0.5rem; color: white;">
+              <div style="font-size: 5rem; margin-bottom: 1rem;">✅</div>
+              <p style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">No products expiring soon!</p>
+              <small style="opacity: 0.9;">Alert threshold: ${expiryAlertDays} days</small>
+              <div style="margin-top: 1.5rem;">
+                <a href="/inventory" class="btn" style="background: white; color: var(--success-color); padding: 0.75rem 1.5rem;">
+                  View Inventory
+                </a>
+              </div>
+            </div>
+          `;
+        }
+
+        // Update pharmacy name in logo if setting exists
+        try {
+          const pharmacyNameResponse = await fetch('/api/settings/pharmacy_name');
+          if (pharmacyNameResponse.ok) {
+            const pharmacyName = await pharmacyNameResponse.json();
+            if (pharmacyName.value && pharmacyName.value.trim()) {
+              const logo = document.querySelector('.logo');
+              if (logo) {
+                logo.textContent = `💊 ${pharmacyName.value}`;
+              }
+              document.title = `Dashboard - ${pharmacyName.value}`;
+            }
+          }
+        } catch (error) {
+          console.error('Error loading pharmacy name:', error);
+        }
+
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+        document.getElementById('statsContainer').innerHTML = `
+          <div class="card" style="grid-column: 1 / -1;">
+            <p style="color: var(--danger-color); text-align: center;">Error loading dashboard data. Please refresh the page.</p>
+          </div>
+        `;
+      }
+    }
+  </script>
+  <script src="/js/dateUtils.js"></script>
+</body>
+</html>
+

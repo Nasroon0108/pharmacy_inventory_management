@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Login - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/user-login">Login</a></li>
+        <li><a href="/admin-login">Admin</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container" style="max-width: 500px; margin-top: 4rem;">
+    <section class="card" style="box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="color: var(--primary-color); margin-bottom: 0.5rem;">Customer Login</h1>
+        <p style="color: var(--text-light);">Sign in to shop and place orders</p>
+      </div>
+      
+      <div id="alertContainer"></div>
+      
+      <!-- Login Form -->
+      <div id="loginSection">
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required autofocus placeholder="Enter your username">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="Enter your password">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem; margin-top: 1rem;">
+            Sign In
+          </button>
+        </form>
+        <div class="form-toggle">
+          Don't have an account? <a id="showRegister">Create Account</a>
+        </div>
+      </div>
+
+      <!-- Registration Form -->
+      <div id="registerSection" class="hidden">
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="regUsername">Username</label>
+            <input type="text" id="regUsername" name="regUsername" required placeholder="Choose a username">
+          </div>
+          <div class="form-group">
+            <label for="regEmail">Email (Optional)</label>
+            <input type="email" id="regEmail" name="regEmail" placeholder="your@email.com">
+          </div>
+          <div class="form-group">
+            <label for="regPassword">Password</label>
+            <input type="password" id="regPassword" name="regPassword" required minlength="6" placeholder="At least 6 characters">
+            <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">Must be at least 6 characters</small>
+          </div>
+          <div class="form-group">
+            <label for="regPasswordConfirm">Confirm Password</label>
+            <input type="password" id="regPasswordConfirm" name="regPasswordConfirm" required placeholder="Confirm your password">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem; margin-top: 1rem;">
+            Create Account
+          </button>
+        </form>
+        <div class="form-toggle">
+          Already have an account? <a id="showLogin">Sign In</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    // Toggle between login and register forms
+    document.getElementById('showRegister').addEventListener('click', function() {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('registerSection').classList.remove('hidden');
+    });
+
+    document.getElementById('showLogin').addEventListener('click', function() {
+      document.getElementById('registerSection').classList.add('hidden');
+      document.getElementById('loginSection').classList.remove('hidden');
+    });
+
+    // Login form handler
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      await login(username, password, 'user');
+    });
+
+    // Register form handler
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('regUsername').value;
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+
+      if (password !== passwordConfirm) {
+        showAlert('Passwords do not match', 'error');
+        return;
+      }
+
+      await register(username, password, email);
+    });
+
+    // Check if already logged in - but only redirect if session is valid
+    // Use a fresh check (no cache) to ensure we get current session state
+    fetch('/api/session', { 
+      method: 'GET',
+      cache: 'no-store',
+      credentials: 'include'
+    })
+    .then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      return null;
+    })
+    .then(data => {
+      if (data && data.user) {
+        // User is logged in, redirect based on role
+        if (data.user.role === 'admin') {
+          window.location.href = '/dashboard';
+        } else {
+          window.location.href = '/shop';
+        }
+      }
+      // If no user, stay on login page
+    })
+    .catch(error => {
+      console.error('Auth check error:', error);
+      // On error, stay on login page
+    });
+  </script>
+</body>
+</html>

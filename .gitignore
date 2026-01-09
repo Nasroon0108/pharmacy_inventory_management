@@ -1,0 +1,7 @@
+node_modules/
+pharmacy.db
+.DS_Store
+.env
+*.log
+public/uploads/
+

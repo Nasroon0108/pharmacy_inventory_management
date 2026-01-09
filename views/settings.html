@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/inventory">Inventory</a></li>
+        <li><a href="/order-management">Orders</a></li>
+        <li><a href="/users">Users</a></li>
+        <li><a href="/settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1 style="margin-bottom: 2rem;">Settings</h1>
+    
+    <div id="alertContainer"></div>
+
+    <!-- General Settings -->
+    <section class="card">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">General Settings</h2>
+      
+      <form id="generalSettingsForm" onsubmit="event.preventDefault(); saveGeneralSettings();">
+        <div class="form-group">
+          <label for="pharmacy_name">Pharmacy Name</label>
+          <input 
+            type="text" 
+            id="pharmacy_name" 
+            name="pharmacy_name" 
+            placeholder="Enter pharmacy name"
+          >
+          <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+            This name will be displayed throughout the system
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="pharmacy_email">Contact Email</label>
+          <input 
+            type="email" 
+            id="pharmacy_email" 
+            name="pharmacy_email" 
+            placeholder="pharmacy@example.com"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="pharmacy_phone">Contact Phone</label>
+          <input 
+            type="tel" 
+            id="pharmacy_phone" 
+            name="pharmacy_phone" 
+            placeholder="+1 234 567 8900"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="pharmacy_address">Address</label>
+          <textarea 
+            id="pharmacy_address" 
+            name="pharmacy_address" 
+            rows="2"
+            placeholder="Enter pharmacy address"
+          ></textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary">Save General Settings</button>
+          <button type="button" onclick="loadSettings()" class="btn btn-secondary">Reset</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Inventory Settings -->
+    <section class="card" style="margin-top: 2rem;">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Inventory Settings</h2>
+      
+      <form id="inventorySettingsForm" onsubmit="event.preventDefault(); saveInventorySettings();">
+        <div class="form-group">
+          <label for="lowStockThreshold">
+            Low Stock Threshold
+            <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+              Products with quantity below this number will be marked as low stock
+            </small>
+          </label>
+          <input 
+            type="number" 
+            id="lowStockThreshold" 
+            name="lowStockThreshold" 
+            min="1" 
+            value="10"
+            required
+            style="max-width: 200px;"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="expiry_alert_days">
+            Expiry Alert Days
+            <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+              Show alert for products expiring within this many days
+            </small>
+          </label>
+          <input 
+            type="number" 
+            id="expiry_alert_days" 
+            name="expiry_alert_days" 
+            min="1" 
+            value="30"
+            required
+            style="max-width: 200px;"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="items_per_page">Items Per Page</label>
+          <select id="items_per_page" name="items_per_page" style="max-width: 200px;">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+            Number of items to display per page in tables
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="currency_symbol">Currency Symbol</label>
+          <input 
+            type="text" 
+            id="currency_symbol" 
+            name="currency_symbol" 
+            maxlength="3"
+            placeholder="Rs"
+            style="max-width: 200px;"
+          >
+          <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+            Default: Rs (Rupees)
+          </small>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary">Save Inventory Settings</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Display Settings -->
+    <section class="card" style="margin-top: 2rem;">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Display Settings</h2>
+      
+      <form id="displaySettingsForm" onsubmit="event.preventDefault(); saveDisplaySettings();">
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
+            <input 
+              type="checkbox" 
+              id="darkMode" 
+              name="darkMode"
+              onchange="toggleDarkMode(this.checked)"
+              style="width: auto; cursor: pointer;"
+            >
+            <div>
+              <strong>Dark Mode</strong>
+              <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+                Enable dark theme for better viewing in low light
+              </small>
+            </div>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="date_format">Date Format</label>
+          <select id="date_format" name="date_format" style="max-width: 200px;">
+            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary">Save Display Settings</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Notification Settings -->
+    <section class="card" style="margin-top: 2rem;">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Notification Settings</h2>
+      
+      <form id="notificationSettingsForm" onsubmit="event.preventDefault(); saveNotificationSettings();">
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
+            <input 
+              type="checkbox" 
+              id="low_stock_alerts" 
+              name="low_stock_alerts"
+              style="width: auto; cursor: pointer;"
+            >
+            <div>
+              <strong>Low Stock Alerts</strong>
+              <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+                Get notified when products are running low
+              </small>
+            </div>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
+            <input 
+              type="checkbox" 
+              id="new_order_notifications" 
+              name="new_order_notifications"
+              style="width: auto; cursor: pointer;"
+            >
+            <div>
+              <strong>New Order Notifications</strong>
+              <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+                Get notified when new orders are placed
+              </small>
+            </div>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
+            <input 
+              type="checkbox" 
+              id="expiry_alerts" 
+              name="expiry_alerts"
+              style="width: auto; cursor: pointer;"
+            >
+            <div>
+              <strong>Expiry Date Alerts</strong>
+              <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+                Get notified when products are nearing expiry
+              </small>
+            </div>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Account Settings -->
+    <section class="card" style="margin-top: 2rem; border-left: 4px solid var(--danger-color);">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Account</h2>
+      
+      <div class="form-group">
+        <p style="color: var(--text-light); margin-bottom: 1rem;">
+          Manage your account and session settings
+        </p>
+        <button 
+          type="button" 
+          onclick="logout()" 
+          class="btn" 
+          style="background: var(--danger-color); color: white; padding: 0.75rem 2rem;"
+        >
+          🚪 Logout
+        </button>
+        <small style="color: var(--text-light); display: block; margin-top: 0.5rem;">
+          Click to logout from your current session
+        </small>
+      </div>
+    </section>
+
+    <!-- Current Settings Display -->
+    <section class="card" style="margin-top: 2rem;">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Current Settings Summary</h2>
+      <div id="currentSettings">
+        <p>Loading settings...</p>
+      </div>
+    </section>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    // Protect admin route
+    protectAdminRoute().then(user => {
+      if (!user) return;
+      loadSettings();
+      loadDarkMode();
+    });
+
+    // Load dark mode preference
+    function loadDarkMode() {
+      const darkMode = localStorage.getItem('darkMode') === 'true';
+      const setting = localStorage.getItem('darkModeSetting');
+      const isDark = setting ? setting === 'true' : darkMode;
+      
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      if (document.getElementById('darkMode')) {
+        document.getElementById('darkMode').checked = isDark;
+      }
+      updateThemeToggle();
+    }
+
+    // Toggle dark mode
+    function toggleDarkMode(checked = null) {
+      const darkModeCheckbox = document.getElementById('darkMode');
+      const isDark = checked !== null ? checked : (darkModeCheckbox ? !darkModeCheckbox.checked : false);
+      
+      // Apply immediately to current page
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      localStorage.setItem('darkMode', isDark);
+      localStorage.setItem('darkModeSetting', isDark);
+      
+      if (darkModeCheckbox) {
+        darkModeCheckbox.checked = isDark;
+      }
+      
+      // Save to database
+      saveSetting('dark_mode', isDark ? 'true' : 'false', 'Dark mode preference').then(() => {
+        // Show notification that it will apply to all pages
+        showAlert('Dark mode ' + (isDark ? 'enabled' : 'disabled') + '. This will apply to all pages.', 'success');
+      });
+    }
+
+    // Update theme toggle function
+    function updateThemeToggle() {
+      // Only update checkbox, no floating button needed
+      const darkModeCheckbox = document.getElementById('darkMode');
+      if (darkModeCheckbox) {
+        // Checkbox state is managed by toggleDarkMode function
+      }
+    }
+
+    // Load all settings
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/settings');
+        const settings = await response.json();
+
+        // Populate general settings
+        if (settings.pharmacy_name) {
+          document.getElementById('pharmacy_name').value = settings.pharmacy_name.value || '';
+        }
+        if (settings.pharmacy_email) {
+          document.getElementById('pharmacy_email').value = settings.pharmacy_email.value || '';
+        }
+        if (settings.pharmacy_phone) {
+          document.getElementById('pharmacy_phone').value = settings.pharmacy_phone.value || '';
+        }
+        if (settings.pharmacy_address) {
+          document.getElementById('pharmacy_address').value = settings.pharmacy_address.value || '';
+        }
+
+        // Populate inventory settings
+        if (settings.low_stock_threshold) {
+          document.getElementById('lowStockThreshold').value = settings.low_stock_threshold.value || '10';
+        }
+        if (settings.expiry_alert_days) {
+          document.getElementById('expiry_alert_days').value = settings.expiry_alert_days.value || '30';
+        }
+        if (settings.items_per_page) {
+          document.getElementById('items_per_page').value = settings.items_per_page.value || '25';
+        }
+        if (settings.currency_symbol) {
+          document.getElementById('currency_symbol').value = settings.currency_symbol.value || 'Rs'; // Changed from '₹'
+        }
+
+        // Populate display settings
+        if (settings.dark_mode) {
+          const isDark = settings.dark_mode.value === 'true';
+          document.getElementById('darkMode').checked = isDark;
+          document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+          updateThemeToggle();
+        }
+        if (settings.date_format) {
+          document.getElementById('date_format').value = settings.date_format.value || 'MM/DD/YYYY';
+        }
+
+        // Populate notification settings
+        if (settings.low_stock_alerts) {
+          document.getElementById('low_stock_alerts').checked = settings.low_stock_alerts.value === 'true';
+        }
+        if (settings.new_order_notifications) {
+          document.getElementById('new_order_notifications').checked = settings.new_order_notifications.value === 'true';
+        }
+        if (settings.expiry_alerts) {
+          document.getElementById('expiry_alerts').checked = settings.expiry_alerts.value === 'true';
+        }
+
+        // Display current settings summary
+        displayCurrentSettings(settings);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        showAlert('Failed to load settings', 'error');
+      }
+    }
+
+    // Helper function to save a setting
+    async function saveSetting(key, value, description) {
+      try {
+        const response = await fetch(`/api/settings/${key}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ value: value || '', description: description || '' })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || `Failed to save ${key}`);
+        }
+        
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error(`Error saving ${key}:`, error);
+        throw error;
+      }
+    }
+
+    // Save general settings with better error handling
+    async function saveGeneralSettings() {
+      const settings = {
+        pharmacy_name: document.getElementById('pharmacy_name').value.trim(),
+        pharmacy_email: document.getElementById('pharmacy_email').value.trim(),
+        pharmacy_phone: document.getElementById('pharmacy_phone').value.trim(),
+        pharmacy_address: document.getElementById('pharmacy_address').value.trim()
+      };
+
+      try {
+        await Promise.all([
+          saveSetting('pharmacy_name', settings.pharmacy_name, 'Pharmacy name'),
+          saveSetting('pharmacy_email', settings.pharmacy_email, 'Contact email'),
+          saveSetting('pharmacy_phone', settings.pharmacy_phone, 'Contact phone'),
+          saveSetting('pharmacy_address', settings.pharmacy_address, 'Pharmacy address')
+        ]);
+        showAlert('General settings saved successfully!', 'success');
+        loadSettings();
+      } catch (error) {
+        console.error('Save error:', error);
+        showAlert('Failed to save general settings: ' + error.message, 'error');
+      }
+    }
+
+    // Save inventory settings with better error handling
+    async function saveInventorySettings() {
+      const threshold = document.getElementById('lowStockThreshold').value;
+      const expiryDays = document.getElementById('expiry_alert_days').value;
+      const itemsPerPage = document.getElementById('items_per_page').value;
+      const currency = document.getElementById('currency_symbol').value.trim() || 'Rs';
+
+      if (!threshold || threshold < 1) {
+        showAlert('Please enter a valid threshold (minimum 1)', 'error');
+        return;
+      }
+      if (!expiryDays || expiryDays < 1) {
+        showAlert('Please enter valid expiry alert days (minimum 1)', 'error');
+        return;
+      }
+
+      try {
+        await Promise.all([
+          saveSetting('low_stock_threshold', threshold, 'Low stock threshold'),
+          saveSetting('expiry_alert_days', expiryDays, 'Expiry alert days'),
+          saveSetting('items_per_page', itemsPerPage, 'Items per page'),
+          saveSetting('currency_symbol', currency, 'Currency symbol')
+        ]);
+        showAlert('Inventory settings saved successfully!', 'success');
+        loadSettings();
+      } catch (error) {
+        console.error('Save error:', error);
+        showAlert('Failed to save inventory settings: ' + error.message, 'error');
+      }
+    }
+
+    // Save display settings with better error handling
+    async function saveDisplaySettings() {
+      const darkMode = document.getElementById('darkMode').checked;
+      const dateFormat = document.getElementById('date_format').value;
+
+      try {
+        await Promise.all([
+          saveSetting('dark_mode', darkMode ? 'true' : 'false', 'Dark mode'),
+          saveSetting('date_format', dateFormat, 'Date format')
+        ]);
+        
+        toggleDarkMode(darkMode);
+        showAlert('Display settings saved successfully!', 'success');
+        loadSettings();
+      } catch (error) {
+        console.error('Save error:', error);
+        showAlert('Failed to save display settings: ' + error.message, 'error');
+      }
+    }
+
+    // Save notification settings with better error handling
+    async function saveNotificationSettings() {
+      const lowStockAlerts = document.getElementById('low_stock_alerts').checked;
+      const newOrderNotifications = document.getElementById('new_order_notifications').checked;
+      const expiryAlerts = document.getElementById('expiry_alerts').checked;
+
+      try {
+        await Promise.all([
+          saveSetting('low_stock_alerts', lowStockAlerts ? 'true' : 'false', 'Low stock alerts'),
+          saveSetting('new_order_notifications', newOrderNotifications ? 'true' : 'false', 'New order notifications'),
+          saveSetting('expiry_alerts', expiryAlerts ? 'true' : 'false', 'Expiry date alerts')
+        ]);
+        showAlert('Notification settings saved successfully!', 'success');
+        loadSettings();
+      } catch (error) {
+        console.error('Save error:', error);
+        showAlert('Failed to save notification settings: ' + error.message, 'error');
+      }
+    }
+
+    // Logout function
+    async function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        try {
+          await fetch('/api/logout', { method: 'POST' });
+          window.location.href = '/';
+        } catch (error) {
+          console.error('Logout error:', error);
+          window.location.href = '/';
+        }
+      }
+    }
+
+    // Display current settings summary
+    function displayCurrentSettings(settings) {
+      const currentSettingsDiv = document.getElementById('currentSettings');
+      currentSettingsDiv.innerHTML = `
+        <div style="display: grid; gap: 1rem;">
+          <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 3px solid var(--primary-color);">
+            <strong>Pharmacy Name:</strong> 
+            <span style="color: var(--primary-color);">${settings.pharmacy_name?.value || 'Not set'}</span>
+          </div>
+          <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 3px solid var(--success-color);">
+            <strong>Low Stock Threshold:</strong> 
+            <span style="color: var(--primary-color); font-size: 1.25rem; font-weight: bold;">
+              ${settings.low_stock_threshold?.value || '10'}
+            </span>
+          </div>
+          <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 3px solid var(--warning-color);">
+            <strong>Currency:</strong> 
+            <span style="color: var(--primary-color); font-size: 1.25rem; font-weight: bold;">
+              ${settings.currency_symbol?.value || 'Rs'}
+            </span>
+          </div>
+          <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 3px solid var(--accent-color);">
+            <strong>Items Per Page:</strong> 
+            <span style="color: var(--primary-color); font-size: 1.25rem; font-weight: bold;">
+              ${settings.items_per_page?.value || '25'}
+            </span>
+          </div>
+          <div style="padding: 1rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 3px solid var(--danger-color);">
+            <strong>Dark Mode:</strong> 
+            <span style="color: var(--primary-color); font-size: 1.25rem; font-weight: bold;">
+              ${settings.dark_mode?.value === 'true' ? 'Enabled' : 'Disabled'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    function showAlert(message, type = 'info') {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type}`;
+      alertDiv.textContent = message;
+      
+      const container = document.querySelector('.container');
+      if (container) {
+        const alertContainer = document.getElementById('alertContainer');
+        if (alertContainer) {
+          alertContainer.innerHTML = '';
+          alertContainer.appendChild(alertDiv);
+        } else {
+          container.insertBefore(alertDiv, container.firstChild);
+        }
+        
+        setTimeout(() => {
+          alertDiv.remove();
+        }, 5000);
+      }
+    }
+  </script>
+</body>
+</html>

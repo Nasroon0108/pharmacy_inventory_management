@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users Management - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/inventory">Inventory</a></li>
+        <li><a href="/order-management">Orders</a></li>
+        <li><a href="/users">Users</a></li>
+        <li><a href="/settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1 style="margin-bottom: 2rem;">Users Management</h1>
+    
+    <div id="alertContainer"></div>
+
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2>All Registered Users</h2>
+        <button onclick="loadUsers()" class="btn btn-primary">Refresh</button>
+      </div>
+
+      <div class="table-container">
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Registration Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="6" style="text-align: center;">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <footer style="background: var(--bg-white); color: var(--text-dark); text-align: center; padding: 2rem; margin-top: 4rem; border-top: 1px solid var(--border-color);">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+
+    // Logout function - use the one from auth.js
+    // No need to redefine, auth.js provides it
+
+    // Protect admin route
+    protectAdminRoute().then(user => {
+      if (!user) return;
+      // Store current user ID for deletion checks
+      window.currentUserId = user.id;
+      loadUsers();
+    });
+
+    async function deleteUser(userId, username) {
+      // Confirm deletion
+      const confirmed = confirm(`Are you sure you want to delete user "${username}"?\n\nThis will also delete all orders associated with this user. This action cannot be undone.`);
+      
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`/api/users/${userId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showAlert(`User "${username}" has been deleted successfully.`, 'success');
+          loadUsers(); // Reload the list
+        } else {
+          showAlert(data.error || 'Failed to delete user', 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        showAlert('An error occurred while deleting the user', 'error');
+      }
+    }
+
+    function showAlert(message, type = 'info') {
+      const alertContainer = document.getElementById('alertContainer');
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type}`;
+      alertDiv.textContent = message;
+      alertDiv.style.marginBottom = '1rem';
+      
+      alertContainer.innerHTML = '';
+      alertContainer.appendChild(alertDiv);
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        alertDiv.remove();
+      }, 5000);
+    }
+
+    async function loadUsers() {
+      try {
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+          throw new Error('Failed to load users');
+        }
+        const users = await response.json();
+
+        const tbody = document.querySelector('#usersTable tbody');
+        
+        if (users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No users found</td></tr>';
+          return;
+        }
+
+        // Get current user ID from session (we'll need to fetch it)
+        const currentUserId = window.currentUserId || null;
+
+        tbody.innerHTML = users.map(user => {
+          const isCurrentUser = currentUserId && user.id === currentUserId;
+          const isAdmin = user.role === 'admin';
+          const canDelete = !isCurrentUser && !isAdmin; // Don't allow deleting yourself or other admins
+          
+          return `
+          <tr>
+            <td>${user.id}</td>
+            <td><strong>${user.username}</strong> ${isCurrentUser ? '<span style="color: var(--primary-color);">(You)</span>' : ''}</td>
+            <td>${user.email || 'N/A'}</td>
+            <td><span style="padding: 0.25rem 0.75rem; border-radius: 0.25rem; background: ${isAdmin ? 'var(--primary-color)' : 'var(--text-light)'}; color: white; text-transform: capitalize; font-size: 0.875rem;">${user.role || 'user'}</span></td>
+            <td>${formatSriLankanDateTime(user.created_at)}</td>
+            <td>
+              ${canDelete ? `
+                <button onclick="deleteUser(${user.id}, '${user.username.replace(/'/g, "\\'")}')" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                  🗑️ Delete
+                </button>
+              ` : `
+                <span style="color: var(--text-light); font-size: 0.875rem;">${isCurrentUser ? 'Cannot delete yourself' : isAdmin ? 'Protected' : 'N/A'}</span>
+              `}
+            </td>
+          </tr>
+        `;
+        }).join('');
+      } catch (error) {
+        console.error('Error loading users:', error);
+        const tbody = document.querySelector('#usersTable tbody');
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">Error loading users</td></tr>';
+      }
+    }
+  </script>
+  <script src="/js/dateUtils.js"></script>
+</body>
+</html>

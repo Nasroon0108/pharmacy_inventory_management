@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/">Home</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/user-login">Login</a></li>
+        <li><a href="/admin-login">Admin</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>About MediFlow</h1>
+    <p>Your trusted partner in pharmacy management</p>
+  </section>
+
+  <div class="container">
+    <section class="card">
+      <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Who We Are</h2>
+      <p style="font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.8;">
+        MediFlow is a comprehensive inventory management system designed specifically for modern pharmacies. 
+        Our mission is to help pharmacy owners and managers streamline their operations, reduce errors, and 
+        improve efficiency while providing excellent service to their customers.
+      </p>
+
+      <h2 style="color: var(--primary-color); margin-top: 2rem; margin-bottom: 1rem;">Our Mission</h2>
+      <p style="margin-bottom: 2rem; line-height: 1.8;">
+        To provide pharmacies with a reliable, user-friendly, and efficient inventory management solution 
+        that helps them focus on what matters most - serving their customers and patients with quality healthcare products.
+      </p>
+
+      <h2 style="color: var(--primary-color); margin-top: 2rem; margin-bottom: 1rem;">What We Offer</h2>
+      <div class="stats-grid" style="margin-top: 2rem;">
+        <div class="stat-card">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
+          <h3>Inventory Tracking</h3>
+          <p>Keep track of all your products, quantities, and locations in one centralized system with real-time updates.</p>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📅</div>
+          <h3>Expiry Management</h3>
+          <p>Monitor expiry dates to prevent waste and ensure product quality with automated alerts.</p>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🏢</div>
+          <h3>Supplier Information</h3>
+          <p>Maintain detailed supplier records for easy reordering and seamless communication.</p>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+          <h3>Analytics & Reports</h3>
+          <p>Generate comprehensive reports and analytics for better decision-making and insights.</p>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🛒</div>
+          <h3>Online Ordering</h3>
+          <p>Enable customers to browse and order products online with a seamless shopping experience.</p>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">⚡</div>
+          <h3>Real-time Updates</h3>
+          <p>Get instant notifications for low stock, new orders, and important inventory changes.</p>
+        </div>
+      </div>
+
+      <h2 style="color: var(--primary-color); margin-top: 3rem; margin-bottom: 1rem;">Key Features</h2>
+      <div style="display: grid; gap: 1rem; margin-top: 1.5rem;">
+        <div style="padding: 1.5rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 4px solid var(--primary-color);">
+          <h3 style="margin-bottom: 0.5rem;">🔐 Secure & Reliable</h3>
+          <p>Your data is protected with industry-standard security measures and regular backups.</p>
+        </div>
+        <div style="padding: 1.5rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 4px solid var(--success-color);">
+          <h3 style="margin-bottom: 0.5rem;">💻 Easy to Use</h3>
+          <p>Intuitive interface designed for pharmacy staff of all technical levels.</p>
+        </div>
+        <div style="padding: 1.5rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 4px solid var(--warning-color);">
+          <h3 style="margin-bottom: 0.5rem;">📱 Mobile Responsive</h3>
+          <p>Access your inventory management system from any device, anywhere, anytime.</p>
+        </div>
+        <div style="padding: 1.5rem; background: var(--bg-light); border-radius: 0.5rem; border-left: 4px solid var(--accent-color);">
+          <h3 style="margin-bottom: 0.5rem;">🚀 Fast & Efficient</h3>
+          <p>Optimized performance ensures quick access to information and smooth operations.</p>
+        </div>
+      </div>
+
+      <h2 style="color: var(--primary-color); margin-top: 3rem; margin-bottom: 1rem;">Our Team</h2>
+      <p style="line-height: 1.8;">
+        We are a dedicated team of developers and healthcare professionals committed to creating 
+        solutions that make pharmacy management easier and more efficient. Our combined expertise 
+        in technology and healthcare ensures that MediFlow meets the real-world needs of modern pharmacies.
+      </p>
+    </section>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/nav.js"></script>
+  <script>
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+  </script>
+</body>
+</html>
+

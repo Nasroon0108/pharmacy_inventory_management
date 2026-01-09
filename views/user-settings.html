@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Settings - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/user-dashboard">Dashboard</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/my-orders">My Orders</a></li>
+        <li><a href="/cart" id="cartLink">Cart (<span id="cartCount">0</span>)</a></li>
+        <li><a href="/user-settings">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1 style="margin-bottom: 2rem;">My Settings</h1>
+    
+    <div id="alertContainer"></div>
+
+    <!-- Profile Picture Section -->
+    <section class="card">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Profile Picture</h2>
+      <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+        <div style="text-align: center;">
+          <label for="photoInput" style="cursor: pointer; display: inline-block;">
+            <img 
+              id="profilePicture" 
+              src="/uploads/default-avatar.png" 
+              alt="Profile Picture" 
+              style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary-color); background: var(--bg-light); cursor: pointer; transition: opacity 0.3s;"
+              onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Ccircle cx=%2275%22 cy=%2275%22 r=%2275%22 fill=%22%23e5e7eb%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2240%22 fill=%22%239ca3af%22%3E👤%3C/text%3E%3C/svg%3E'"
+              onmouseover="this.style.opacity='0.8'"
+              onmouseout="this.style.opacity='1'"
+            >
+          </label>
+          <p style="margin-top: 1rem; color: var(--text-light); font-size: 0.875rem;">Click to upload</p>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+          <form id="photoUploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+              <label for="photoInput">Upload Profile Picture</label>
+              <input 
+                type="file" 
+                id="photoInput" 
+                name="photo" 
+                accept="image/*"
+                onchange="previewPhoto(this)"
+                style="padding: 0.5rem; display: none;"
+              >
+              <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+                Supported formats: JPG, PNG, GIF (Max 2MB)
+              </small>
+            </div>
+            <button type="button" onclick="document.getElementById('photoInput').click()" class="btn btn-primary" style="margin-top: 0.5rem;">
+              Choose Photo
+            </button>
+            <button type="button" onclick="uploadPhoto()" class="btn btn-primary" style="margin-top: 0.5rem; margin-left: 0.5rem;">
+              Upload Photo
+            </button>
+            <button type="button" onclick="removePhoto()" class="btn btn-secondary" style="margin-top: 0.5rem; margin-left: 0.5rem;">
+              Remove Photo
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Account Information -->
+    <section class="card" style="margin-top: 2rem;">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Account Information</h2>
+      
+      <form id="accountForm" onsubmit="event.preventDefault(); updateAccount();">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            required
+            placeholder="Enter username"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            required
+            placeholder="Enter email address"
+          >
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" onclick="loadUserProfile()" class="btn btn-secondary">Reset</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Change Password -->
+    <section class="card" style="margin-top: 2rem;">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Change Password</h2>
+      
+      <form id="passwordForm" onsubmit="event.preventDefault(); changePassword();">
+        <div class="form-group">
+          <label for="currentPassword">Current Password</label>
+          <input 
+            type="password" 
+            id="currentPassword" 
+            name="currentPassword" 
+            required
+            placeholder="Enter current password"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="newPassword">New Password</label>
+          <input 
+            type="password" 
+            id="newPassword" 
+            name="newPassword" 
+            required
+            minlength="6"
+            placeholder="Enter new password (min 6 characters)"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm New Password</label>
+          <input 
+            type="password" 
+            id="confirmPassword" 
+            name="confirmPassword" 
+            required
+            minlength="6"
+            placeholder="Confirm new password"
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Change Password</button>
+      </form>
+    </section>
+
+        <!-- Display Settings -->
+        <section class="card" style="margin-top: 2rem;">
+          <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Display Settings</h2>
+          
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
+              <input 
+                type="checkbox" 
+                id="darkMode" 
+                name="darkMode"
+                onchange="toggleDarkMode(this.checked)"
+                style="width: auto; cursor: pointer;"
+              >
+              <div>
+                <strong>Dark Mode</strong>
+                <small style="color: var(--text-light); display: block; margin-top: 0.25rem;">
+                  Enable dark theme for better viewing in low light
+                </small>
+              </div>
+            </label>
+          </div>
+        </section>      
+
+    <!-- Account Actions -->
+    <section class="card" style="margin-top: 2rem; border-left: 4px solid var(--danger-color);">
+      <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Account Actions</h2>
+      
+      <div class="form-group">
+        <p style="color: var(--text-light); margin-bottom: 1rem;">
+          Manage your account and session
+        </p>
+        <button 
+          type="button" 
+          onclick="logout()" 
+          class="btn" 
+          style="background: var(--danger-color); color: white; padding: 0.75rem 2rem;"
+        >
+          🚪 Logout
+        </button>
+        <small style="color: var(--text-light); display: block; margin-top: 0.5rem;">
+          Click to logout from your current session
+        </small>
+      </div>
+    </section>
+  </div>
+
+  <footer style="background: var(--bg-white); color: var(--text-dark); text-align: center; padding: 2rem; margin-top: 4rem; border-top: 1px solid var(--border-color);">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    // Update cart count
+    function updateCartCount() {
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const cartCountElement = document.getElementById('cartCount');
+        if (cartCountElement) {
+          cartCountElement.textContent = count;
+        }
+      } catch (error) {
+        console.error('Error updating cart count:', error);
+      }
+    }
+
+    // Protect route
+    protectRoute().then(user => {
+      if (!user) return;
+      updateCartCount();
+      loadUserProfile();
+      loadDarkMode();
+    });
+
+    document.addEventListener('click', function(event) {
+      const nav = document.querySelector('nav');
+      const navLinks = document.getElementById('navLinks');
+      
+      if (!nav.contains(event.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+
+    // Logout function
+    async function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        try {
+          await fetch('/api/logout', { method: 'POST' });
+          window.location.href = '/';
+        } catch (error) {
+          console.error('Logout error:', error);
+          window.location.href = '/';
+        }
+      }
+    }
+
+    // Protect route
+    protectRoute().then(user => {
+      if (!user) return;
+      loadUserProfile();
+    });
+
+    // Load user profile
+    async function loadUserProfile() {
+      try {
+        const response = await fetch('/api/user/profile');
+        if (!response.ok) throw new Error('Failed to load profile');
+        
+        const profile = await response.json();
+        
+        document.getElementById('username').value = profile.username || '';
+        document.getElementById('email').value = profile.email || '';
+        
+        if (profile.profile_picture) {
+          document.getElementById('profilePicture').src = `/uploads/${profile.profile_picture}`;
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        showAlert('Failed to load profile', 'error');
+      }
+    }
+
+        // Load dark mode preference
+        function loadDarkMode() {
+      const darkMode = localStorage.getItem('darkMode') === 'true';
+      const setting = localStorage.getItem('darkModeSetting');
+      const isDark = setting ? setting === 'true' : darkMode;
+      
+      if (document.getElementById('darkMode')) {
+        document.getElementById('darkMode').checked = isDark;
+      }
+    }
+
+    // Toggle dark mode
+    function toggleDarkMode(checked = null) {
+      const darkModeCheckbox = document.getElementById('darkMode');
+      const isDark = checked !== null ? checked : (darkModeCheckbox ? !darkModeCheckbox.checked : false);
+      
+      // Apply dark mode
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      localStorage.setItem('darkMode', isDark);
+      localStorage.setItem('darkModeSetting', isDark);
+      
+      if (darkModeCheckbox) {
+        darkModeCheckbox.checked = isDark;
+      }
+      
+      showAlert('Dark mode ' + (isDark ? 'enabled' : 'disabled') + '. This will apply to all pages.', 'success');
+    }
+
+    // Preview photo before upload
+    function previewPhoto(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('profilePicture').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // Upload photo
+    async function uploadPhoto() {
+      const fileInput = document.getElementById('photoInput');
+      if (!fileInput.files || !fileInput.files[0]) {
+        showAlert('Please select a photo to upload', 'error');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      
+      // Validate file size (2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        showAlert('File size must be less than 2MB', 'error');
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showAlert('Please select a valid image file', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      try {
+        const response = await fetch('/api/user/upload-photo', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showAlert('Profile picture uploaded successfully!', 'success');
+          loadUserProfile(); // Reload to get updated URL
+        } else {
+          showAlert(data.error || 'Failed to upload photo', 'error');
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        showAlert('An error occurred while uploading', 'error');
+      }
+    }
+
+    // Remove photo
+    async function removePhoto() {
+      if (!confirm('Are you sure you want to remove your profile picture?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/user/remove-photo', {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showAlert('Profile picture removed successfully!', 'success');
+          document.getElementById('profilePicture').src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Ccircle cx=%2275%22 cy=%2275%22 r=%2275%22 fill=%22%23e5e7eb%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2240%22 fill=%22%239ca3af%22%3E👤%3C/text%3E%3C/svg%3E';
+          document.getElementById('photoInput').value = '';
+        } else {
+          showAlert(data.error || 'Failed to remove photo', 'error');
+        }
+      } catch (error) {
+        console.error('Remove photo error:', error);
+        showAlert('An error occurred', 'error');
+      }
+    }
+
+    // Update account information
+    async function updateAccount() {
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+
+      if (!username || !email) {
+        showAlert('Please fill in all fields', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/user/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, email })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showAlert('Account updated successfully!', 'success');
+          // Update session if username changed
+          if (data.user) {
+            window.location.reload();
+          }
+        } else {
+          showAlert(data.error || 'Failed to update account', 'error');
+        }
+      } catch (error) {
+        console.error('Update error:', error);
+        showAlert('An error occurred', 'error');
+      }
+    }
+
+    // Change password
+    async function changePassword() {
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        showAlert('Please fill in all fields', 'error');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showAlert('New password must be at least 6 characters', 'error');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showAlert('New passwords do not match', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/user/change-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showAlert('Password changed successfully!', 'success');
+          document.getElementById('passwordForm').reset();
+        } else {
+          showAlert(data.error || 'Failed to change password', 'error');
+        }
+      } catch (error) {
+        console.error('Change password error:', error);
+        showAlert('An error occurred', 'error');
+      }
+    }
+
+    // Show alert
+    function showAlert(message, type = 'info') {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type}`;
+      alertDiv.textContent = message;
+      
+      const container = document.querySelector('.container');
+      if (container) {
+        const alertContainer = document.getElementById('alertContainer');
+        if (alertContainer) {
+          alertContainer.innerHTML = '';
+          alertContainer.appendChild(alertDiv);
+        } else {
+          container.insertBefore(alertDiv, container.firstChild);
+        }
+        
+        setTimeout(() => {
+          alertDiv.remove();
+        }, 5000);
+      }
+    }
+  </script>
+</body>
+</html>

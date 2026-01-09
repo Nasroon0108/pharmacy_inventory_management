@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - MediFlow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">💊 MediFlow</a>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/">Home</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li><a href="/user-login">Customer Login</a></li>
+        <li><a href="/admin-login">Admin</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container" style="max-width: 500px; margin-top: 4rem;">
+    <section class="card" style="box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-left: 4px solid var(--danger-color);">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="color: var(--danger-color); margin-bottom: 0.5rem;">🔐 Admin Login</h1>
+        <p style="color: var(--text-light);">Administrator access only</p>
+      </div>
+      
+      <div id="alertContainer"></div>
+      
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label for="username">Admin Username</label>
+          <input type="text" id="username" name="username" required autofocus placeholder="Enter admin username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required placeholder="Enter admin password">
+        </div>
+        <button type="submit" class="btn btn-danger" style="width: 100%; padding: 1rem; font-size: 1.1rem; margin-top: 1rem;">
+          Admin Sign In
+        </button>
+      </form>
+      
+      <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+        <p style="color: var(--text-light); font-size: 0.875rem; margin-bottom: 0.5rem;">Default Admin Credentials:</p>
+        <p style="color: var(--text-dark); font-weight: 600;">Username: <code style="background: var(--bg-light); padding: 0.25rem 0.5rem; border-radius: 0.25rem;">admin</code></p>
+        <p style="color: var(--text-dark); font-weight: 600;">Password: <code style="background: var(--bg-light); padding: 0.25rem 0.5rem; border-radius: 0.25rem;">admin123</code></p>
+        <a href="/user-login" style="color: var(--primary-color); text-decoration: none; display: block; margin-top: 1rem;">
+          ← Back to Customer Login
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <footer style="background: var(--text-dark); color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
+    <p>&copy; 2025 MediFlow. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    // Mobile menu toggle
+    function toggleMenu() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+
+    // Admin login form handler
+    document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      
+      if (!username || !password) {
+        showAlert('Please enter both username and password', 'error');
+        return;
+      }
+      
+      // Show loading state
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+      
+      try {
+        await login(username, password, 'admin');
+      } catch (error) {
+        console.error('Login error:', error);
+        showAlert('An error occurred. Please try again.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    });
+
+    // Check if already logged in
+    checkAuth().then(user => {
+      if (user) {
+        if (user.role === 'admin') {
+          window.location.href = '/dashboard';
+        } else {
+          // If regular user, clear session and stay on admin login page
+          // The server should have already cleared the session, but just in case
+          fetch('/api/logout', { method: 'POST' }).then(() => {
+            // Stay on admin login page
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
