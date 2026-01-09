@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: pharmacy-inventory-management
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SESSION_SECRET
+        generateValue: true
+    healthCheckPath: /
+    disk:
+      name: pharmacy-data
+      mountPath: /opt/render/project/src
+      sizeGB: 1
+

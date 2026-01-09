@@ -90,10 +90,13 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Session configuration
 app.use(session({
-  secret: 'pharmacy-secret-key-2024',
+  secret: process.env.SESSION_SECRET || 'pharmacy-secret-key-2024',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', 
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 
 // Authentication middleware
